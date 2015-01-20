@@ -4,8 +4,7 @@
 
 const int echoPin = 7;
 const int triggerPin = 8;
-const int maxDistance = 300;
- 
+const int maxDistance = 100;  // default 300 
 NewPing sonar(triggerPin, echoPin, maxDistance);
 
 int speakerOut = 9; // Put speaker through 220 ohm on pin 9.
@@ -30,11 +29,16 @@ void playTone(int pin, int freq, int dur) {
   }
 }
 
+
 void loop() {
 //   Får tiden det tar med et ping
    unsigned int time = sonar.ping();
 //   Beregn hvor langt dette var
    float distance = sonar.convert_cm(time);
+ //  if (distance == 0) {
+ //   distance = maxDistance;
+ //  };
    frequency = 30 * distance;
    playTone(speakerOut, frequency, 200); 
+   delay(50);
 }
