@@ -1,9 +1,9 @@
-#include "PushButton.h"
+#include "PLab_PushButton.h"
 
 const int buttonPin = 2;     // the number of the pushbutton pin
-const int ledPin =  13;      // the number of the LED pin
+const int ledPin =  3;      // the number of the LED pin
 int ledState = LOW;          // State of LED.
-PushButton myButton(buttonPin); // Create a PushButton object.
+PLab_PushButton myButton(buttonPin); // Create a PushButton object.
 
 void setup() {
   // initialize the LED pin as an output:
