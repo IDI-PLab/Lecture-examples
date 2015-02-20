@@ -50,16 +50,20 @@ class BridgeReplacer implements PLabBridge {
 
 BridgeReplacer bridgeReplacer;
 
-void setupSerialPC(String portName) {
-  // Display all installed serial ports on computer
-  println(Serial.list());
-  // Init a new serial connection
-  Serial port = new Serial(this, portName, 9600);
-  // Set up our replacement for the plab bridge
-  bridgeReplacer = new BridgeReplacer(port);
-  // "bind" the replacer instead of the javascript used in mobile devices (replace javascript injection)
-  bindPLabBridge(bridgeReplacer);
+boolean setupSerialPC(String portName) {
+  for (String s : Serial.list()) {
+       if (s.equals(portName)) {
+           Serial port = new Serial(this, portName, 9600);
+      //  Set up our replacement for the plab bridge
+           bridgeReplacer = new BridgeReplacer(port);
+     // "bind" the replacer instead of the javascript used in mobile devices (replace javascript injection)
+           bindPLabBridge(bridgeReplacer);
+           return true; 
+        } 
+   };
+   return false;  
 }
+
 
 boolean setupSerialMac() {
   String[] searchPatterns = {"tty.PLab", "tty.HC"};
@@ -131,7 +135,11 @@ boolean bluetoothActive = false;
 
 void setup() {
   size(100,100);
-  boolean bluetoothActive = setupSerialMac();
+  boolean bluetoothActive = setupSerialMac();     // On Mac
+  
+ // On PC see: https://www.ntnu.no/wiki/display/plab/3.+Bluetooth+og+Processing
+// boolean bluetoothActive = setupSerialPC("COM12");   
+
 }
 
 void btRead(String string) {
