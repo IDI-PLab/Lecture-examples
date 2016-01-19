@@ -10,7 +10,7 @@
 // Define a special note, 'R', to represent a rest
 #define  R     0
 
-int speakerOut = 9;
+int speakerOut = 8;
 
 // MELODY and TIMING  =======================================
 //  melody[] is an array of notes, accompanied by beats[],
@@ -38,6 +38,6 @@ void loop() {
     delay(duration);
     delay(pauseTime); // A pause between notes...
     }
-  delay(500); // A pause between melodies.
+  delay(1000); // A pause between melodies.
 }
 
