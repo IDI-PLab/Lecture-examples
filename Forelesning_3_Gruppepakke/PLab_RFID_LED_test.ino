@@ -3,9 +3,6 @@
 #include <SPI.h>
 #include <MFRC522.h>
 
-// boolean match = false; // initialize card match to false
-boolean programMode = false; // initialize programming mode to false
-
 int successRead; // Variable integer to keep if we have Successful Read from Reader
 
 byte readCard[4];           // Stores scanned ID read from RFID Module
@@ -26,43 +23,47 @@ byte readCard[4];           // Stores scanned ID read from RFID Module
 MFRC522 mfrc522(SS_PIN, RST_PIN);	// Create MFRC522 instance.
 
 // My cards
-byte myCard1[4] = {0xA1,0x17,0xE8,0x2B} ; // Card #1
-byte myCard2[4] = {0x7E,0x82,0x12,0x23}; // Card #2
+byte myCard1[4] = {0x7B,0xA4,0x27,0x49}; // Card #1
+byte myCard2[4] = {0xA1,0x17,0xE8,0x2B}; // Card #2
 
+int const redLEDPin = 2;
+int const greenLEDPin = 3;
+boolean redLEDon = false;
+boolean greenLEDon = false;
 
 ///////////////////////////////////////// Setup ///////////////////////////////////
 void setup() {
 
   //Protocol Configuration
-  Serial.begin(9600);	 // Initialize serial communications with PC
   SPI.begin();           // MFRC522 Hardware uses SPI protocol
   mfrc522.PCD_Init();    // Initialize MFRC522 Hardware
+  pinMode(redLEDPin, OUTPUT);
+  pinMode(greenLEDPin, OUTPUT);
 }
 
 
 ///////////////////////////////////////// Main Loop ///////////////////////////////////
 void loop() {
   successRead = getID(); // sets successRead to 1 when we get read from reader otherwise 0
-  if (successRead) //the program will not go further while you not get a successful read
-  {  printID(readCard);
+  if (successRead) ; //the program will not go further while you not get a successful read
+  {
     if (areEqual(readCard,myCard1)) {
-      Serial.println("Card 1."); };
-    if (areEqual(readCard,myCard2)) {
-      Serial.println("Card 2."); };
-    Serial.println();
-  }
-}
-
-
-void printID(byte a[]) {
-  Serial.print("{");
-    for (int i = 0; i < 4; i++) {  // 
-      Serial.print("0x");
-      Serial.print(a[i], HEX);
-      if (i < 3) 
-          { Serial.print(",");};
+      if (redLEDon) {
+        digitalWrite(redLEDPin, LOW);
+        redLEDon = false; } 
+       else {
+        digitalWrite(redLEDPin, HIGH);
+        redLEDon = true;}
     };
-    Serial.println("} ");
+    if (areEqual(readCard,myCard2)) {
+      if (greenLEDon) {
+        digitalWrite(greenLEDPin, LOW);
+        greenLEDon = false; } 
+       else {
+        digitalWrite(greenLEDPin, HIGH);
+        greenLEDon = true;}
+    };
+  }
 }
 
 
@@ -83,7 +84,6 @@ boolean getID() {
   mfrc522.PICC_HaltA(); // Stop reading
   return true;
 }
-
 
 
 boolean areEqual( byte a[], byte b[] ) {
