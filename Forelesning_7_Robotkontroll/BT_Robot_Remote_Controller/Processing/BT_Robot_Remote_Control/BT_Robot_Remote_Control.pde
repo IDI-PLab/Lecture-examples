@@ -1,132 +1,38 @@
-/*
-* ---------- Interfaces that make conversion to mobile simpler ----------
-*/
-// Interfaces documented in InterfacesExample
-interface PLabBridge {
-  public int getWidth ();
-  public int getHeight ();
-  public void write (String string);
-  public void subscribeRead (PLabRead sub);
-  public void subscribeError (PLabRead sub);
-  public void disconnect();
-}
-interface PLabRead {
-  public void read(String string);
-}
 
-/*
- * ---------- Bluetooth Serial communication for computer  ---------------------
- */
-import processing.serial.*;
-
-class BridgeReplacer implements PLabBridge {
-  Serial port;
-  PLabRead subscribedRead = null;
-  
-  BridgeReplacer(Serial serialPort) {
-    port = serialPort;
-    port.clear();
-    
-    // Send a message to show we are connected
-  //  port.write("Hello world!\n");
-    // Buffer data until a newline character is reached
-    port.bufferUntil('\n');
-  } 
-  public int getWidth () {
-    return width;
-  }
-  public int getHeight () {
-    return height;
-  }
-  public void write (String string) {
-    port.write(string + "\n");
-  }
-  public void subscribeRead (PLabRead sub) {
-    subscribedRead = sub;
-  }
-  public void subscribeError (PLabRead sub) { /* We do not care about this while developing */ }
-  public void disconnect() { /* We do not care about this while developing */ }
-}
-
-BridgeReplacer bridgeReplacer;
-
-void setupSerialPC(String portName) {
-  // Display all installed serial ports on computer
-  println(Serial.list());
-  // Init a new serial connection
-  Serial port = new Serial(this, portName, 9600);
-  // Set up our replacement for the plab bridge
-  bridgeReplacer = new BridgeReplacer(port);
-  // "bind" the replacer instead of the javascript used in mobile devices (replace javascript injection)
-  bindPLabBridge(bridgeReplacer);
-}
-
-boolean setupSerialMac() {
-  String[] searchPatterns = {"tty.PLab", "tty.HC"};
-  String portName = "";
-  for (String s : Serial.list()) {
-    for (String p : searchPatterns) {
-       if (s.indexOf(p) != -1) {
-         portName = s;
-       }
-    }
-  };
-  if (portName != "") {
-     println(portName);
-     Serial port = new Serial(this, portName, 9600);
-      //  Set up our replacement for the plab bridge
-     bridgeReplacer = new BridgeReplacer(port);
-     // "bind" the replacer instead of the javascript used in mobile devices (replace javascript injection)
-     bindPLabBridge(bridgeReplacer);
-     return true; } 
-   else {
-     return false;  
-  }
-  
-}
-
-// Event handler when something happens to the serial port
-void serialEvent(Serial p) {
-  // Ensure the was event was fired from the correct port
-  if (p == bridgeReplacer.port) {
-    // Try to read until a newline is found
-    String msg = p.readString();
-    // Check the event was fired because a newline was received, and that we have a receiver
-    if (msg != null && bridgeReplacer.subscribedRead != null) {
-      // Send message to the one listening
-      bridgeReplacer.subscribedRead.read(msg);
-    }
-  }
-}
 
 /*
  * ---------- Binding the code with call javascript/serial port ----------
  */
+
 private PLabBridge pBridge;
+
 private String received = null;
 
 void bindPLabBridge (PLabBridge bridge) {
+
   pBridge = bridge;
   
-  // Subscribe to messages. Print incomming messages and change color of drawing
-  bridge.subscribeRead(new PLabRead() {
-    public void read (String string) {
-       btRead(string);
+  // Vi trenger noe som hoerer etter endringer i verdi
+  // We need something that listens to a change in the value
+  // Vi bruker en anonym indre klasse for dette
+  // We use an anonymous inner class for this
+  bridge.subscribeMessages (new PLabRecv() {
+    public void receive (String string) {
+      // code on BT receive goes here.
     }
   });
+  size(bridge.getWidth(), bridge.getHeight());
 }
 
 void btWrite(String string) {
   if (pBridge != null) {
-    pBridge.write(string);
+    pBridge.send(string);
   }
 }
-/*
-* ---------- End of library  -------------
-*/
-//------------------------------------------------------------------------------------- 
 
- //
+
+//-------------
+//
 //  Minimal Processing GUI library.
 //  PLab 2015
 //
@@ -141,13 +47,31 @@ int[] blue = {0,0,255};
 int[] yellow = {255,255,0};
 int[] gray = {128,128,128};
 
+float scaleOfGUI = 1.0;
+int canvasWidth = 0, canvasHeight = 0;
+
+void setCanvas(int w, int h) {
+  canvasWidth = w;
+  canvasHeight = h;
+ // size(w,h);
+}
+
+void scaleGUI() {
+   if (pBridge != null) {
+     scaleOfGUI = pBridge.getWidth() / canvasWidth;
+     scale(scaleOfGUI);
+   };
+}
+
 boolean inside(int x,int y, int x0,int y0,int w,int h) {
   return (((x >= x0) && (x < (x0+w))) && 
       ((y >= y0) && (y < (y0+h))));
 }
 
 boolean mouseInside(int[] rect) {
-  return inside(mouseX, mouseY, rect[0],rect[1],rect[2],rect[3]);
+  int mouseXScaled = int(mouseX / scaleOfGUI);
+  int mouseYScaled = int(mouseY / scaleOfGUI);
+  return inside(mouseXScaled, mouseYScaled, rect[0],rect[1],rect[2],rect[3]);
 }
 
 void drawButton(int[] xywh, String buttonText) {
@@ -194,6 +118,10 @@ void drawCircle(int[] xyr, int[] drawColor) {
     ellipse(xyr[0],xyr[1],xyr[2],xyr[2]);
 }
 
+/*
+* ---------- End of library  -------------
+*/
+//------------------------------------------------------------------------------------- 
 //-------------------------------------------------
 
 int[] buttonFrameForward = {150,25,100,25};
@@ -226,10 +154,11 @@ String buttonStringBackward = "Backward";
 boolean bluetoothActive = false;
 
 void setup() {
-  size(400,600);              // Canvas size is 200 x 200 pixels.
+  // setupSerial();              // Uncomment this to test with bluetooth from PC/Mac...
+  size(400,600);
+  setCanvas(400,600);              // Canvas size is 400 x 600 pixels.
   background(128);            // Background color is gray (128,128,128).
   stroke(0);                  // Stroke color is black (0,0,0)
-  boolean bluetoothActive = setupSerialMac();
 }
 
 void btRead(String string) {
@@ -237,6 +166,7 @@ void btRead(String string) {
 }
   
 void draw() {
+  scaleGUI();
   drawButton(buttonFrameForward,buttonStringForward);
   drawButton(buttonFrameStepF,buttonStringStepF);
   drawButton(buttonFrameLeft,buttonStringLeft);
@@ -277,4 +207,3 @@ void mousePressed() {
       btWrite("BACKWARD");  
    }   
 }
-
