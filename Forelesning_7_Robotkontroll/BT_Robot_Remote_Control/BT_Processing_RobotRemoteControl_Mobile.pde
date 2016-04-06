@@ -1,18 +1,3 @@
-/*
-* ---------- Interfaces that make conversion to mobile simpler ----------
-*/
-// Interfaces documented in InterfacesExample
-interface PLabBridge {
-  public int getWidth ();
-  public int getHeight ();
-  public void write (String string);
-  public void subscribeRead (PLabRead sub);
-  public void subscribeError (PLabRead sub);
-  public void disconnect();
-}
-interface PLabRead {
-  public void read(String string);
-}
 
 
 /*
@@ -22,46 +7,28 @@ private PLabBridge pBridge;
 private String received = null;
 
 void bindPLabBridge (PLabBridge bridge) {
-  size(bridge.getWidth(), bridge.getHeight());
+
   pBridge = bridge;
   
-  // Subscribe to messages. Print incomming messages and change color of drawing
-  bridge.subscribeRead(new PLabRead() {
-    public void read (String string) {
-     //  btRead(string.substring(0,string.length()-2));
+  // Vi trenger noe som hoerer etter endringer i verdi
+  // We need something that listens to a change in the value
+  // Vi bruker en anonym indre klasse for dette
+  // We use an anonymous inner class for this
+  bridge.subscribeMessages (new PLabRecv() {
+    public void receive (String string) {
+      // code on BT receive goes here.
     }
   });
+  size(bridge.getWidth(), bridge.getHeight());
 }
 
 void btWrite(String string) {
   if (pBridge != null) {
-    pBridge.write(string);
+    pBridge.send(string);
   }
 }
 
-/* 
-  This is an implementation of the game Blind Rabbit for Arduino.
-  The user interface of Blind Rabbit consist of a 3x3 matrix of nine squares
-  and four buttons (left, right, up, down).
 
-   The blind rabbit constantly jumps forward on the board
-  in the direction it is heading. The purpose of the game is to prevent the rabbit from
-  jumping outside the board and die by controlling its direction with the pushbuttons.
-  
-   . . .          ^
-   . . .        <   >
-   * . .          v
-  
-  The rabbit moves at an initial speed of one move per second. If you manage to 
-  keep it alive for 10 moves, you will go to the next level of the game where the speed
-  will be 25% higher. If it jumps outside and dies, the speed will be the same and you
-  have an infinite number of trials at that level.
-  
-  The challenge is to see how high speed you can manage.
-
-  PLab 2015, Dag Svanæs, IDI, NTNU.
-  
-*/
 //-------------
 //
 //  Minimal Processing GUI library.
@@ -236,4 +203,3 @@ void mousePressed() {
       btWrite("BACKWARD");  
    }   
 }
-
