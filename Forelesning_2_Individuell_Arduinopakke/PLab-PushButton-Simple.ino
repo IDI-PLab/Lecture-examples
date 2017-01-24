@@ -1,7 +1,7 @@
-#include "PushButton.h"
+#include "PLab_PushButton.h"
 
 const int buttonPin = 2;     // the number of the pushbutton pin
-PushButton myButton(buttonPin);
+PLab_PushButton myButton(buttonPin);
 
 void setup() {
   Serial.begin(9600);
